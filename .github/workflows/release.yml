@@ -33,7 +33,8 @@ jobs:
           $bump = "patch"
 
           # Version bump markers, highest precedence first:
-          # - an explicit marker on the latest commit overrides the accumulated range
+          # - an explicit marker on the latest commit overrides the accumulated range,
+          #   which lets us correct an unreleased bump without rewriting history
           # - major: #major, semver: major, BREAKING CHANGE, or conventional commits with !
           # - minor: #minor, semver: minor, or conventional commits starting with feat:
           # - patch: #patch, semver: patch, or anything else
