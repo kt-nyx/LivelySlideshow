@@ -21,6 +21,100 @@ function Start-LivelySlideshowTrayApp {
         '24 hours' = 24.0
     }
 
+    function Try-ParseIntervalHours {
+        param(
+            [string]$Text,
+            [ref]$Hours
+        )
+
+        if ([string]::IsNullOrWhiteSpace($Text)) {
+            return $false
+        }
+
+        $styles = [System.Globalization.NumberStyles]::Float -bor [System.Globalization.NumberStyles]::AllowThousands
+        $cultures = @(
+            [System.Globalization.CultureInfo]::CurrentCulture,
+            [System.Globalization.CultureInfo]::InvariantCulture
+        )
+
+        foreach ($culture in $cultures) {
+            $value = 0.0
+            if ([double]::TryParse($Text, $styles, $culture, [ref]$value) -and (Test-LivelyValidIntervalHours -Hours $value)) {
+                $Hours.Value = $value
+                return $true
+            }
+        }
+
+        return $false
+    }
+
+    function Prompt-CustomIntervalHours {
+        param([double]$CurrentHours)
+
+        $promptValue = ('{0:0.###}' -f $CurrentHours)
+        while ($true) {
+            $form = New-Object System.Windows.Forms.Form
+            $label = New-Object System.Windows.Forms.Label
+            $textBox = New-Object System.Windows.Forms.TextBox
+            $okButton = New-Object System.Windows.Forms.Button
+            $cancelButton = New-Object System.Windows.Forms.Button
+
+            try {
+                $form.Text = 'Custom interval'
+                $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
+                $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+                $form.ClientSize = New-Object System.Drawing.Size(360, 120)
+                $form.MaximizeBox = $false
+                $form.MinimizeBox = $false
+                $form.ShowInTaskbar = $false
+                $form.TopMost = $true
+
+                $label.AutoSize = $true
+                $label.Location = New-Object System.Drawing.Point(12, 12)
+                $label.MaximumSize = New-Object System.Drawing.Size(336, 0)
+                $label.Text = 'Enter the wallpaper rotation interval in hours. Decimals are allowed, for example 0.5 for 30 minutes.'
+
+                $textBox.Location = New-Object System.Drawing.Point(15, 58)
+                $textBox.Size = New-Object System.Drawing.Size(333, 23)
+                $textBox.Text = $promptValue
+
+                $okButton.Location = New-Object System.Drawing.Point(192, 88)
+                $okButton.Size = New-Object System.Drawing.Size(75, 23)
+                $okButton.Text = 'OK'
+                $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+
+                $cancelButton.Location = New-Object System.Drawing.Point(273, 88)
+                $cancelButton.Size = New-Object System.Drawing.Size(75, 23)
+                $cancelButton.Text = 'Cancel'
+                $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+
+                [void]$form.Controls.Add($label)
+                [void]$form.Controls.Add($textBox)
+                [void]$form.Controls.Add($okButton)
+                [void]$form.Controls.Add($cancelButton)
+                $form.AcceptButton = $okButton
+                $form.CancelButton = $cancelButton
+                $form.ActiveControl = $textBox
+
+                $dialogResult = $form.ShowDialog()
+                if ($dialogResult -ne [System.Windows.Forms.DialogResult]::OK) {
+                    return $null
+                }
+
+                $parsedHours = 0.0
+                if (Try-ParseIntervalHours -Text $textBox.Text -Hours ([ref]$parsedHours)) {
+                    return $parsedHours
+                }
+
+                $promptValue = $textBox.Text
+            } finally {
+                $form.Dispose()
+            }
+
+            Show-LivelyUserMessage -Message 'Enter a number greater than zero. You can use decimals such as 0.5 for 30 minutes.' -Icon Warning
+        }
+    }
+
     function Show-FirstRunTipIfNeeded {
         $config = Get-LivelyConfig
         if (-not [string]::IsNullOrWhiteSpace([string]$config.WallFolder)) {
@@ -107,11 +201,17 @@ function Start-LivelySlideshowTrayApp {
         $script:miFileCount.Text = 'Files found: {0}' -f $fileCount
         $script:miCurrentFolder.Text = if ([string]::IsNullOrWhiteSpace([string]$config.WallFolder)) { 'No folder selected' } else { $config.WallFolder }
 
+        $hasPresetMatch = $false
         foreach ($item in $script:miInterval.DropDownItems) {
             if ($item -is [System.Windows.Forms.ToolStripMenuItem]) {
-                $item.Checked = ([double]$item.Tag -eq [double]$config.IntervalHours)
+                $item.Checked = $false
+                if ($item.Tag -is [double] -and [double]$item.Tag -eq [double]$config.IntervalHours) {
+                    $item.Checked = $true
+                    $hasPresetMatch = $true
+                }
             }
         }
+        $script:miCustomInterval.Checked = -not $hasPresetMatch
 
         $script:miInterval.Text = 'Interval: {0}' -f (Get-IntervalLabel -Hours ([double]$config.IntervalHours))
 
@@ -297,6 +397,10 @@ function Start-LivelySlideshowTrayApp {
     function Set-IntervalHours {
         param([double]$Hours)
 
+        if (-not (Test-LivelyValidIntervalHours -Hours $Hours)) {
+            throw 'Interval must be a number greater than zero.'
+        }
+
         $config = Get-LivelyConfig
         $config.IntervalHours = $Hours
         Save-LivelyConfig -Config $config
@@ -355,6 +459,18 @@ function Start-LivelySlideshowTrayApp {
         })
         [void]$script:miInterval.DropDownItems.Add($mi)
     }
+    [void]$script:miInterval.DropDownItems.Add((New-Object System.Windows.Forms.ToolStripSeparator))
+
+    $script:miCustomInterval = New-Object System.Windows.Forms.ToolStripMenuItem('Custom...')
+    $script:miCustomInterval.ToolTipText = 'Enter a custom rotation interval in hours. Decimals are allowed.'
+    $script:miCustomInterval.Add_Click({
+        $customHours = Prompt-CustomIntervalHours -CurrentHours ([double](Get-LivelyConfig).IntervalHours)
+        if ($null -ne $customHours) {
+            Set-IntervalHours -Hours ([double]$customHours)
+        }
+    })
+    [void]$script:miInterval.DropDownItems.Add($script:miCustomInterval)
+
     [void]$menu.Items.Add($script:miInterval)
 
     $script:miFolder = New-Object System.Windows.Forms.ToolStripMenuItem('Folder')
