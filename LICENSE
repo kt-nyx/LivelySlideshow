@@ -1,0 +1,23 @@
+MIT No Attribution License (MIT-0)
+
+Copyright (c) 2026 LivelySlideshow contributors
+
+Permission to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software is granted without restriction.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+Scope: The license above applies to LivelySlideshow’s original source code and other
+copyrightable work in this repository by its contributors. It does not apply to
+third-party components. The installer distributes livelycu.exe from Lively Wallpaper
+under GPLv3 only; the full license text for that program is in LICENSES/GPL-3.0.txt.
+See README.md (section “Third-party notices”) for details.
+
+SPDX-License-Identifier: MIT-0

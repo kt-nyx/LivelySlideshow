@@ -1,0 +1,12 @@
+data/*
+!data/.gitkeep
+
+app/livelycu.exe
+Livelycu.exe
+
+*.log
+*.pid
+*.tmp
+*.bak
+
+dist/
