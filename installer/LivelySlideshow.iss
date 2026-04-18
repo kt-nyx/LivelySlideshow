@@ -20,6 +20,7 @@ DisableDirPage=yes
 DisableProgramGroupPage=yes
 DisableReadyPage=yes
 DisableWelcomePage=no
+SetupIconFile=..\tray.ico
 Compression=lzma
 SolidCompression=yes
 OutputDir=..\dist
@@ -31,6 +32,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 SetupLogging=yes
 WizardStyle=modern
 UninstallDisplayName=LivelySlideshow
+UninstallDisplayIcon={app}\tray.ico
 
 [Files]
 Source: "..\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs createallsubdirs ignoreversion

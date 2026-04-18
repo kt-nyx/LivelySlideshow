@@ -10,7 +10,7 @@ function Get-LivelySupportedExtensions {
 function Get-LivelyWallpaperFiles {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Folder,
 
         [bool]$Recursive = $false
