@@ -4,7 +4,7 @@ LivelySlideshow is a simple Windows tray app that rotates wallpapers from a fold
 
 ## Download
 
-- Download the latest installer from the GitHub Releases page.
+- Download the latest installer from the [GitHub Releases page](https://github.com/kt-nyx/LivelySlideshow/releases/latest).
 - Install [Lively Wallpaper](https://github.com/rocksdanister/lively).
 - Run `LivelySlideshowSetup.exe`.
 
@@ -18,7 +18,7 @@ LivelySlideshow depends on Lively Wallpaper to display wallpapers. If Lively is 
 ## Install
 
 1. Install [Lively Wallpaper](https://github.com/rocksdanister/lively).
-2. Download `LivelySlideshowSetup.exe` from GitHub Releases.
+2. Download `LivelySlideshowSetup.exe` from the [latest release](https://github.com/kt-nyx/LivelySlideshow/releases/latest).
 3. Run the installer.
 4. The installer places the app in `%LOCALAPPDATA%\LivelySlideshow`.
 5. LivelySlideshow starts automatically and appears in the system tray.
