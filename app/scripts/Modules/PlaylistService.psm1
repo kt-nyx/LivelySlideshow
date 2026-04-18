@@ -78,7 +78,10 @@ function Get-LivelyNextWallpaperState {
         $state = New-LivelyDefaultState
     }
 
-    $availableSet = New-Object 'System.Collections.Generic.HashSet[string]' ([string[]]$AvailableFiles)
+    $availableSet = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($availableFile in $AvailableFiles) {
+        [void]$availableSet.Add([string]$availableFile)
+    }
     $needShuffle = $ForceShuffle.IsPresent
 
     if (-not $needShuffle) {

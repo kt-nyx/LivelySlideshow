@@ -37,12 +37,7 @@ Source: "..\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs createallsubdirs
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\third_party_licenses\*"; DestDir: "{app}\third_party_licenses"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Download-LivelyCU.ps1"; DestDir: "{tmp}"; Flags: deleteafterinstall
-
-[Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\Download-LivelyCU.ps1"" -DestinationPath ""{app}\app\livelycu.exe"""; Flags: runhidden waituntilterminated
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\app\scripts\Register-StartupTask.ps1"""; Flags: runhidden waituntilterminated
-Filename: "wscript.exe"; Parameters: """{app}\app\scripts\LaunchHidden.vbs"""; Flags: runhidden nowait
+Source: "Download-LivelyCU.ps1"; DestDir: "{tmp}"; Flags: deleteafterinstall; AfterInstall: FinalizeInstall
 
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\app\scripts\Uninstall-LivelySlideshow.ps1"""; RunOnceId: "UninstallLivelySlideshow"; Flags: runhidden waituntilterminated skipifdoesntexist
@@ -55,6 +50,34 @@ Type: filesandordirs; Name: "{app}\data\logs"
 Type: filesandordirs; Name: "{app}\data"
 
 [Code]
+function RunHiddenPowerShell(const ScriptPath, ScriptArguments: String; var ResultCode: Integer): Boolean;
+var
+  Parameters: string;
+begin
+  Parameters :=
+    '-NoProfile -ExecutionPolicy Bypass -File "' + ScriptPath + '"';
+
+  if ScriptArguments <> '' then
+  begin
+    Parameters := Parameters + ' ' + ScriptArguments;
+  end;
+
+  Result := Exec(
+    ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    Parameters,
+    '',
+    SW_HIDE,
+    ewWaitUntilTerminated,
+    ResultCode
+  );
+end;
+
+procedure FailInstall(const ErrorMessage: string);
+begin
+  MsgBox(ErrorMessage, mbCriticalError, MB_OK);
+  RaiseException(ErrorMessage);
+end;
+
 function IsLivelyInstalled: Boolean;
 var
   FindRec: TFindRec;
@@ -78,6 +101,57 @@ begin
       Result := True;
     finally
       FindClose(FindRec);
+    end;
+  end;
+end;
+
+procedure FinalizeInstall;
+var
+  ResultCode: Integer;
+begin
+  if not RunHiddenPowerShell(
+    ExpandConstant('{tmp}\Download-LivelyCU.ps1'),
+    '-DestinationPath "' + ExpandConstant('{app}\app\livelycu.exe') + '"',
+    ResultCode
+  ) then
+  begin
+    FailInstall('Setup could not start the livelycu.exe download step. Setup will now roll back.');
+  end;
+
+  if ResultCode <> 0 then
+  begin
+    FailInstall(
+      'Setup could not download livelycu.exe.' + #13#10 + #13#10 +
+      'Check your internet connection and try again. Setup will now roll back.'
+    );
+  end;
+
+  if not RunHiddenPowerShell(
+    ExpandConstant('{app}\app\scripts\Register-StartupTask.ps1'),
+    '',
+    ResultCode
+  ) then
+  begin
+    FailInstall('Setup could not register the LivelySlideshow startup task. Setup will now roll back.');
+  end;
+
+  if ResultCode <> 0 then
+  begin
+    FailInstall('Setup could not register the LivelySlideshow startup task. Setup will now roll back.');
+  end;
+
+  if IsLivelyInstalled then
+  begin
+    if not Exec(
+      'wscript.exe',
+      '"' + ExpandConstant('{app}\app\scripts\LaunchHidden.vbs') + '"',
+      '',
+      SW_HIDE,
+      ewNoWait,
+      ResultCode
+    ) then
+    begin
+      Log('LivelySlideshow could not be launched automatically after setup.');
     end;
   end;
 end;
