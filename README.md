@@ -45,7 +45,7 @@ If you prefer, you can also run `%LOCALAPPDATA%\LivelySlideshow\unins000.exe` di
 Right-click the tray icon to manage the app:
 
 - `Next wallpaper` changes to the next wallpaper immediately.
-- `Shuffle now` reshuffles the current playlist and changes immediately.
+- `Shuffle: On/Off` switches between random order and alphabetical order. When shuffle is off, wallpapers rotate alphabetically by filename.
 - `Interval` sets how often wallpapers rotate.
 - `Folder` lets you choose the wallpaper folder.
 - `Include subfolders` expands the scan into nested folders (e.g. if you have the folder "Wallpapers" with the folder "Landscapes" inside, the app will also scan through "Landscapes" for wallpapers).

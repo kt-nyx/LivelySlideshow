@@ -325,6 +325,7 @@ function Start-LivelySlideshowTrayApp {
     $script:tray.Visible = $true
 
     $menu = New-Object System.Windows.Forms.ContextMenuStrip
+    $menu.ShowItemToolTips = $true
     $script:miCountdown = New-Object System.Windows.Forms.ToolStripMenuItem('Next change: --:--:--')
     $script:miCountdown.Enabled = $false
     [void]$menu.Items.Add($script:miCountdown)
@@ -335,6 +336,7 @@ function Start-LivelySlideshowTrayApp {
 
     $script:miShuffle = New-Object System.Windows.Forms.ToolStripMenuItem('Shuffle: On')
     $script:miShuffle.CheckOnClick = $false
+    $script:miShuffle.ToolTipText = 'On randomizes the playlist. Off rotates wallpapers alphabetically by filename.'
     $script:miShuffle.Add_Click({
         $config = Get-LivelyConfig
         Set-ShuffleMode -Enabled (-not [bool]$config.ShuffleEnabled)

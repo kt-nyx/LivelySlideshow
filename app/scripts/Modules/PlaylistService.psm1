@@ -64,7 +64,11 @@ function Get-LivelyOrderedList {
         [string[]]$Items
     )
 
-    return @($Items | Sort-Object)
+    return @(
+        $Items | Sort-Object `
+            @{ Expression = { [System.IO.Path]::GetFileName([string]$_) } }, `
+            @{ Expression = { [string]$_ } }
+    )
 }
 
 function Get-LivelyPlaylist {
