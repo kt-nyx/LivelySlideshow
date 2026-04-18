@@ -28,14 +28,22 @@ jobs:
         run: |
           $latestTag = git tag --list "v*" --sort=-version:refname | Select-Object -First 1
           $range = if (-not $latestTag) { "HEAD" } else { "$latestTag..HEAD" }
+          $headCommitText = git log -1 --pretty=format:"%s%n%b"
           $commitText = (git log $range --pretty=format:"%s%n%b%n---END---") -join "`n"
           $bump = "patch"
 
           # Version bump markers, highest precedence first:
+          # - an explicit marker on the latest commit overrides the accumulated range
           # - major: #major, semver: major, BREAKING CHANGE, or conventional commits with !
           # - minor: #minor, semver: minor, or conventional commits starting with feat:
           # - patch: #patch, semver: patch, or anything else
-          if ($commitText -match '(?im)#major\b|semver:\s*major\b|BREAKING CHANGE\b|^[^\r\n]*!:' ) {
+          if ($headCommitText -match '(?im)#major\b|semver:\s*major\b|BREAKING CHANGE\b|^[^\r\n]*!:' ) {
+            $bump = "major"
+          } elseif ($headCommitText -match '(?im)#minor\b|semver:\s*minor\b|^feat(\([^)]+\))?:' ) {
+            $bump = "minor"
+          } elseif ($headCommitText -match '(?im)#patch\b|semver:\s*patch\b' ) {
+            $bump = "patch"
+          } elseif ($commitText -match '(?im)#major\b|semver:\s*major\b|BREAKING CHANGE\b|^[^\r\n]*!:' ) {
             $bump = "major"
           } elseif ($commitText -match '(?im)#minor\b|semver:\s*minor\b|^feat(\([^)]+\))?:' ) {
             $bump = "minor"
@@ -131,9 +139,9 @@ jobs:
           $body = @(
             "## Download"
             ""
-            "- Installer: `${{ steps.assets.outputs.installer_name }}`"
-            "- SHA-256: `${{ steps.assets.outputs.sha256 }}`"
-            "- Checksums: `SHA256SUMS.txt`"
+            "- Installer: ${{ steps.assets.outputs.installer_name }}"
+            "- SHA-256: ${{ steps.assets.outputs.sha256 }}"
+            "- Checksums: SHA256SUMS.txt"
             ""
             "## What's changed"
             ""
@@ -141,7 +149,7 @@ jobs:
             ""
             "## Notes"
             ""
-            "- Version bump: `${{ steps.version.outputs.bump }}`"
+            "- Version bump: ${{ steps.version.outputs.bump }}"
             "- Lively Wallpaper is required: https://github.com/rocksdanister/lively"
             "- This release is built automatically from the `main` branch."
           )
