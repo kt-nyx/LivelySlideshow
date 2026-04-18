@@ -6,8 +6,10 @@ function New-LivelyDefaultConfig {
 
     return [PSCustomObject]@{
         IntervalHours = 6.0
-        WallFolder = Get-LivelyDefaultWallpaperFolder
+        WallFolder = ''
         Recursive = $false
+        ShuffleEnabled = $true
+        WelcomeTipShown = $false
     }
 }
 
@@ -40,11 +42,19 @@ function Get-LivelyConfig {
         }
 
         if (-not $config.PSObject.Properties.Match('WallFolder')) {
-            $config | Add-Member -NotePropertyName WallFolder -NotePropertyValue (Get-LivelyDefaultWallpaperFolder)
+            $config | Add-Member -NotePropertyName WallFolder -NotePropertyValue ''
         }
 
         if (-not $config.PSObject.Properties.Match('Recursive')) {
             $config | Add-Member -NotePropertyName Recursive -NotePropertyValue $false
+        }
+
+        if (-not $config.PSObject.Properties.Match('ShuffleEnabled')) {
+            $config | Add-Member -NotePropertyName ShuffleEnabled -NotePropertyValue $true
+        }
+
+        if (-not $config.PSObject.Properties.Match('WelcomeTipShown')) {
+            $config | Add-Member -NotePropertyName WelcomeTipShown -NotePropertyValue $false
         }
 
         return $config

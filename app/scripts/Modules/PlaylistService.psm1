@@ -57,6 +57,68 @@ function Get-LivelyShuffledList {
     return $shuffled
 }
 
+function Get-LivelyOrderedList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Items
+    )
+
+    return @($Items | Sort-Object)
+}
+
+function Get-LivelyPlaylist {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Items,
+
+        [bool]$ShuffleEnabled = $true
+    )
+
+    if ($ShuffleEnabled) {
+        return Get-LivelyShuffledList -Items $Items
+    }
+
+    return Get-LivelyOrderedList -Items $Items
+}
+
+function Get-LivelyResyncedState {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$AvailableFiles,
+
+        [Parameter(Mandatory = $true)]
+        $CurrentState,
+
+        [bool]$ShuffleEnabled = $true,
+
+        [switch]$KeepCurrentWallpaper
+    )
+
+    $playlist = @(Get-LivelyPlaylist -Items $AvailableFiles -ShuffleEnabled $ShuffleEnabled)
+    $lastWallpaper = if ($null -ne $CurrentState) { [string]$CurrentState.LastWallpaper } else { $null }
+    $lastChanged = if ($null -ne $CurrentState) { $CurrentState.LastChanged } else { $null }
+
+    if ($KeepCurrentWallpaper -and -not [string]::IsNullOrWhiteSpace($lastWallpaper) -and ($playlist -contains $lastWallpaper)) {
+        $remaining = @($playlist | Where-Object { $_ -ne $lastWallpaper })
+        return [PSCustomObject]@{
+            Playlist = @($lastWallpaper) + $remaining
+            Index = 1
+            LastChanged = $lastChanged
+            LastWallpaper = $lastWallpaper
+        }
+    }
+
+    return [PSCustomObject]@{
+        Playlist = $playlist
+        Index = 0
+        LastChanged = $lastChanged
+        LastWallpaper = $lastWallpaper
+    }
+}
+
 function Get-LivelyNextWallpaperState {
     [CmdletBinding()]
     param(
@@ -65,6 +127,8 @@ function Get-LivelyNextWallpaperState {
 
         [Parameter(Mandatory = $true)]
         $CurrentState,
+
+        [bool]$ShuffleEnabled = $true,
 
         [switch]$ForceShuffle
     )
@@ -100,22 +164,12 @@ function Get-LivelyNextWallpaperState {
     }
 
     if ($needShuffle) {
-        $state = [PSCustomObject]@{
-            Playlist = (Get-LivelyShuffledList -Items $AvailableFiles)
-            Index = 0
-            LastChanged = $state.LastChanged
-            LastWallpaper = $state.LastWallpaper
-        }
+        $state = Get-LivelyResyncedState -AvailableFiles $AvailableFiles -CurrentState $state -ShuffleEnabled $ShuffleEnabled
     }
 
     $nextIndex = [int]$state.Index
     if ($nextIndex -ge $state.Playlist.Count) {
-        $state = [PSCustomObject]@{
-            Playlist = (Get-LivelyShuffledList -Items $AvailableFiles)
-            Index = 0
-            LastChanged = $state.LastChanged
-            LastWallpaper = $state.LastWallpaper
-        }
+        $state = Get-LivelyResyncedState -AvailableFiles $AvailableFiles -CurrentState $state -ShuffleEnabled $ShuffleEnabled
         $nextIndex = 0
     }
 
@@ -134,4 +188,4 @@ function Get-LivelyNextWallpaperState {
     }
 }
 
-Export-ModuleMember -Function Get-LivelySupportedExtensions, Get-LivelyWallpaperFiles, Get-LivelyShuffledList, Get-LivelyNextWallpaperState
+Export-ModuleMember -Function Get-LivelySupportedExtensions, Get-LivelyWallpaperFiles, Get-LivelyShuffledList, Get-LivelyOrderedList, Get-LivelyPlaylist, Get-LivelyResyncedState, Get-LivelyNextWallpaperState

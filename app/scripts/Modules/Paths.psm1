@@ -23,6 +23,7 @@ function Get-LivelySlideshowPaths {
         LogFile = Join-Path $logDir 'LivelySlideshow.log'
         LivelyCUPath = Join-Path $appDir 'livelycu.exe'
         HiddenLauncher = Join-Path $scriptsDir 'LaunchHidden.vbs'
+        IconPath = Join-Path $installRoot 'tray.ico'
         TaskName = 'LivelySlideshow'
         ProductName = 'LivelySlideshow'
         SupportUrl = 'https://github.com/rocksdanister/lively'

@@ -37,6 +37,7 @@ Source: "..\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs createallsubdirs
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\third_party_licenses\*"; DestDir: "{app}\third_party_licenses"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\tray.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Download-LivelyCU.ps1"; DestDir: "{tmp}"; Flags: deleteafterinstall; AfterInstall: FinalizeInstall
 
 [UninstallRun]

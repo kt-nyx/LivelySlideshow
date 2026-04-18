@@ -21,6 +21,25 @@ function Start-LivelySlideshowTrayApp {
         '24 hours' = 24.0
     }
 
+    function Show-FirstRunTipIfNeeded {
+        $config = Get-LivelyConfig
+        if (-not [string]::IsNullOrWhiteSpace([string]$config.WallFolder)) {
+            return
+        }
+
+        if ([bool]$config.WelcomeTipShown) {
+            return
+        }
+
+        $script:tray.BalloonTipTitle = 'LivelySlideshow installed'
+        $script:tray.BalloonTipText = 'Right-click the tray icon and choose Folder > Choose folder... to get started.'
+        $script:tray.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
+        $script:tray.ShowBalloonTip(12000)
+
+        $config.WelcomeTipShown = $true
+        Save-LivelyConfig -Config $config
+    }
+
     function Get-CurrentConfigState {
         return [PSCustomObject]@{
             Config = Get-LivelyConfig
@@ -83,8 +102,10 @@ function Start-LivelySlideshowTrayApp {
 
         $script:miFolder.Text = 'Folder: {0}{1}' -f $folderName, $(if ($config.Recursive) { ' [+subs]' } else { '' })
         $script:miRecursive.Checked = [bool]$config.Recursive
+        $script:miShuffle.Checked = [bool]$config.ShuffleEnabled
+        $script:miShuffle.Text = if ($config.ShuffleEnabled) { 'Shuffle: On' } else { 'Shuffle: Off' }
         $script:miFileCount.Text = 'Files found: {0}' -f $fileCount
-        $script:miCurrentFolder.Text = $config.WallFolder
+        $script:miCurrentFolder.Text = if ([string]::IsNullOrWhiteSpace([string]$config.WallFolder)) { 'No folder selected' } else { $config.WallFolder }
 
         foreach ($item in $script:miInterval.DropDownItems) {
             if ($item -is [System.Windows.Forms.ToolStripMenuItem]) {
@@ -123,6 +144,11 @@ function Start-LivelySlideshowTrayApp {
         $state = $snapshot.State
         $lastChanged = Get-LastChangedDate -State $state
 
+        if ([string]::IsNullOrWhiteSpace([string]$config.WallFolder)) {
+            $script:miCountdown.Text = 'Next change: choose a folder to start'
+            return
+        }
+
         if ($null -eq $lastChanged) {
             $script:miCountdown.Text = 'Next change: waiting for first wallpaper'
             return
@@ -148,6 +174,10 @@ function Start-LivelySlideshowTrayApp {
         $state = $snapshot.State
         $lastChanged = Get-LastChangedDate -State $state
 
+        if ([string]::IsNullOrWhiteSpace([string]$config.WallFolder)) {
+            return $false
+        }
+
         if ($null -eq $lastChanged) {
             return $true
         }
@@ -168,6 +198,17 @@ function Start-LivelySlideshowTrayApp {
         $script:isChangingWallpaper = $true
         try {
             $config = Get-LivelyConfig
+            if ([string]::IsNullOrWhiteSpace([string]$config.WallFolder)) {
+                $message = 'Choose a wallpaper folder to get started.'
+                if ($UserInitiated) {
+                    Show-LivelyUserMessage -Message $message -Icon Info
+                }
+
+                Update-MenuText
+                Update-CountdownText
+                return $false
+            }
+
             $files = @(Get-LivelyWallpaperFiles -Folder $config.WallFolder -Recursive ([bool]$config.Recursive))
             if ($files.Count -eq 0) {
                 $message = 'No supported images were found in the selected folder.'
@@ -182,7 +223,7 @@ function Start-LivelySlideshowTrayApp {
             }
 
             $currentState = Get-LivelyState
-            $nextItem = Get-LivelyNextWallpaperState -AvailableFiles $files -CurrentState $currentState -ForceShuffle:$ForceShuffle
+            $nextItem = Get-LivelyNextWallpaperState -AvailableFiles $files -CurrentState $currentState -ShuffleEnabled ([bool]$config.ShuffleEnabled) -ForceShuffle:$ForceShuffle
             if ($null -eq $nextItem) {
                 return $false
             }
@@ -214,6 +255,7 @@ function Start-LivelySlideshowTrayApp {
 
         $config = Get-LivelyConfig
         $config.WallFolder = $Folder
+        $config.WelcomeTipShown = $true
         Save-LivelyConfig -Config $config
         [void](Reset-LivelyState)
         Write-LivelyLog -Message ('Wallpaper folder updated to {0}' -f $Folder)
@@ -231,6 +273,27 @@ function Start-LivelySlideshowTrayApp {
         [void](Try-AdvanceWallpaper -ForceShuffle -UserInitiated)
     }
 
+    function Set-ShuffleMode {
+        param([bool]$Enabled)
+
+        $config = Get-LivelyConfig
+        $currentState = Get-LivelyState
+        $config.ShuffleEnabled = $Enabled
+        Save-LivelyConfig -Config $config
+
+        if (-not [string]::IsNullOrWhiteSpace([string]$config.WallFolder)) {
+            $files = @(Get-LivelyWallpaperFiles -Folder $config.WallFolder -Recursive ([bool]$config.Recursive))
+            if ($files.Count -gt 0) {
+                $newState = Get-LivelyResyncedState -AvailableFiles $files -CurrentState $currentState -ShuffleEnabled $Enabled -KeepCurrentWallpaper
+                Save-LivelyState -State $newState
+            }
+        }
+
+        Write-LivelyLog -Message ('Shuffle mode set to {0}' -f $Enabled)
+        Update-MenuText
+        Update-CountdownText
+    }
+
     function Set-IntervalHours {
         param([double]$Hours)
 
@@ -242,7 +305,20 @@ function Start-LivelySlideshowTrayApp {
         Update-CountdownText
     }
 
-    $icon = [System.Drawing.SystemIcons]::Application
+    $paths = Get-LivelySlideshowPaths
+    $icon = $null
+    if (Test-Path -LiteralPath $paths.IconPath) {
+        try {
+            $icon = New-Object System.Drawing.Icon($paths.IconPath)
+        } catch {
+            Write-LivelyLogError -Context 'Failed to load tray icon' -ErrorRecord $_
+        }
+    }
+
+    if ($null -eq $icon) {
+        $icon = [System.Drawing.SystemIcons]::Application
+    }
+
     $script:tray = New-Object System.Windows.Forms.NotifyIcon
     $script:tray.Icon = $icon
     $script:tray.Text = 'LivelySlideshow'
@@ -257,9 +333,13 @@ function Start-LivelySlideshowTrayApp {
     $miNext.Add_Click({ [void](Try-AdvanceWallpaper -UserInitiated) })
     [void]$menu.Items.Add($miNext)
 
-    $miShuffle = New-Object System.Windows.Forms.ToolStripMenuItem('Shuffle now')
-    $miShuffle.Add_Click({ [void](Try-AdvanceWallpaper -ForceShuffle -UserInitiated) })
-    [void]$menu.Items.Add($miShuffle)
+    $script:miShuffle = New-Object System.Windows.Forms.ToolStripMenuItem('Shuffle: On')
+    $script:miShuffle.CheckOnClick = $false
+    $script:miShuffle.Add_Click({
+        $config = Get-LivelyConfig
+        Set-ShuffleMode -Enabled (-not [bool]$config.ShuffleEnabled)
+    })
+    [void]$menu.Items.Add($script:miShuffle)
 
     [void]$menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator))
 
@@ -281,7 +361,10 @@ function Start-LivelySlideshowTrayApp {
         $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
         $dialog.Description = 'Choose the folder that contains your wallpapers.'
         $dialog.ShowNewFolderButton = $false
-        $dialog.SelectedPath = (Get-LivelyConfig).WallFolder
+        $selectedPath = (Get-LivelyConfig).WallFolder
+        if (-not [string]::IsNullOrWhiteSpace([string]$selectedPath) -and (Test-Path -LiteralPath $selectedPath)) {
+            $dialog.SelectedPath = $selectedPath
+        }
         try {
             if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                 if (Test-FolderHasSupportedFiles -Folder $dialog.SelectedPath -Recursive ((Get-LivelyConfig).Recursive)) {
@@ -365,6 +448,7 @@ function Start-LivelySlideshowTrayApp {
     Show-DependencyWarning
     Update-MenuText
     Update-CountdownText
+    Show-FirstRunTipIfNeeded
     if (Test-ChangeDue) {
         [void](Try-AdvanceWallpaper)
     }
