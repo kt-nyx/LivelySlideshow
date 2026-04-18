@@ -23,6 +23,23 @@ LivelySlideshow depends on Lively Wallpaper to display wallpapers. If Lively is 
 
 The installer also registers a per-user Task Scheduler entry so the tray app launches silently when you start Windows.
 
+## Uninstall
+
+You can uninstall LivelySlideshow like any other Windows app:
+
+1. Open `Settings` -> `Apps` -> `Installed apps` (or `Apps & features` on older Windows versions).
+2. Find `LivelySlideshow`.
+3. Click `Uninstall`.
+
+The uninstaller will:
+
+- stop the running tray app
+- remove the per-user startup task
+- remove the installed app files from `%LOCALAPPDATA%\LivelySlideshow`
+- remove LivelySlideshow's local config, state, and log files
+
+If you prefer, you can also run `%LOCALAPPDATA%\LivelySlideshow\unins000.exe` directly.
+
 ## Configure
 
 Right-click the tray icon to manage the app:
@@ -59,13 +76,13 @@ The bundled Lively command utility is stored here:
 
 LivelySlideshow’s own source code is released under the [MIT No Attribution License (MIT-0)](https://opensource.org/licenses/MIT-0) (`LICENSE`). You may use, copy, modify, merge, publish, distribute, sublicense, and/or sell it without preserving a copyright or permission notice in copies.
 
-Third-party components (below) are not covered by MIT-0. The full text of GPLv3 is bundled as `LICENSES/GPL-3.0.txt` because the installer distributes `livelycu.exe` under that license.
+Third-party components (below) are not covered by MIT-0. The full text of GPLv3 is bundled as `third_party_licenses/LICENSE` because the installer distributes `livelycu.exe` under that license.
 
 ## Third-party notices
 
 ### Lively Wallpaper (`livelycu.exe`)
 
-LivelySlideshow talks to the user’s installation of [Lively Wallpaper](https://github.com/rocksdanister/lively). The installer downloads `livelycu.exe` (the Lively command utility) from Lively’s release artifacts. That executable is licensed under **GPL-3.0**; the full text is in `LICENSES/GPL-3.0.txt`. Corresponding source for Lively, including the command utility, is available from the [Lively repository](https://github.com/rocksdanister/lively).
+LivelySlideshow talks to the user’s installation of [Lively Wallpaper](https://github.com/rocksdanister/lively). The installer downloads `livelycu.exe` (the Lively command utility) from Lively’s release artifacts. That executable is licensed under **GPL-3.0**; the full text is in `third_party_licenses/LICENSE`. Corresponding source for Lively, including the command utility, is available from the [Lively repository](https://github.com/rocksdanister/lively).
 
 ### Tray icon (`tray.ico`)
 

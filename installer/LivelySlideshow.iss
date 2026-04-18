@@ -1,5 +1,7 @@
 #define MyAppName "LivelySlideshow"
-#define MyAppVersion "1.0.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0.0"
+#endif
 #define MyAppPublisher "LivelySlideshow contributors"
 #define MyAppURL "https://github.com/rocksdanister/lively"
 #define LivelyCUVersion "v2.0.4.0"
@@ -33,7 +35,7 @@ UninstallDisplayName=LivelySlideshow
 [Files]
 Source: "..\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LICENSES\*"; DestDir: "{app}\LICENSES"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\third_party_licenses\*"; DestDir: "{app}\third_party_licenses"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Download-LivelyCU.ps1"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
@@ -43,7 +45,7 @@ Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile
 Filename: "wscript.exe"; Parameters: """{app}\app\scripts\LaunchHidden.vbs"""; Flags: runhidden nowait
 
 [UninstallRun]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\app\scripts\Unregister-StartupTask.ps1"""; RunOnceId: "UnregisterLivelySlideshowTask"; Flags: runhidden waituntilterminated skipifdoesntexist
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\app\scripts\Uninstall-LivelySlideshow.ps1"""; RunOnceId: "UninstallLivelySlideshow"; Flags: runhidden waituntilterminated skipifdoesntexist
 
 [UninstallDelete]
 Type: files; Name: "{app}\app\livelycu.exe"

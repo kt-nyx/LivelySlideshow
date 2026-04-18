@@ -1,0 +1,80 @@
+name: Build And Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags
+        shell: pwsh
+        run: git fetch --tags --force
+
+      - name: Compute next version
+        id: version
+        shell: pwsh
+        run: |
+          $latestTag = git tag --list "v*" --sort=-version:refname | Select-Object -First 1
+
+          if (-not $latestTag) {
+            $nextVersion = "1.0.0"
+          } else {
+            if ($latestTag -notmatch '^v(\d+)\.(\d+)\.(\d+)$') {
+              throw "Latest tag '$latestTag' is not in expected v<major>.<minor>.<patch> format."
+            }
+
+            $major = [int]$Matches[1]
+            $minor = [int]$Matches[2]
+            $patch = [int]$Matches[3] + 1
+            $nextVersion = "$major.$minor.$patch"
+          }
+
+          "version=$nextVersion" >> $env:GITHUB_OUTPUT
+          "tag=v$nextVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path -LiteralPath $iscc)) {
+            throw "ISCC.exe not found at $iscc"
+          }
+
+          & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "installer\LivelySlideshow.iss"
+
+      - name: Prepare release asset
+        id: asset
+        shell: pwsh
+        run: |
+          $source = "dist\LivelySlideshowSetup.exe"
+          if (-not (Test-Path -LiteralPath $source)) {
+            throw "Expected installer was not produced at $source"
+          }
+
+          $destination = "dist\LivelySlideshowSetup-v${{ steps.version.outputs.version }}.exe"
+          Move-Item -LiteralPath $source -Destination $destination -Force
+          "path=$destination" >> $env:GITHUB_OUTPUT
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: LivelySlideshow v${{ steps.version.outputs.version }}
+          files: ${{ steps.asset.outputs.path }}
+          generate_release_notes: true

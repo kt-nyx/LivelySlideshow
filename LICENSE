@@ -17,7 +17,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Scope: The license above applies to LivelySlideshow’s original source code and other
 copyrightable work in this repository by its contributors. It does not apply to
 third-party components. The installer distributes livelycu.exe from Lively Wallpaper
-under GPLv3 only; the full license text for that program is in LICENSES/GPL-3.0.txt.
+under GPLv3 only; the full license text for that program is in third_party_licenses/LICENSE.
 See README.md (section “Third-party notices”) for details.
 
 SPDX-License-Identifier: MIT-0
