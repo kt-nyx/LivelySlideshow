@@ -27,6 +27,21 @@ jobs:
         shell: pwsh
         run: |
           $latestTag = git tag --list "v*" --sort=-version:refname | Select-Object -First 1
+          $range = if (-not $latestTag) { "HEAD" } else { "$latestTag..HEAD" }
+          $commitText = (git log $range --pretty=format:"%s%n%b%n---END---") -join "`n"
+          $bump = "patch"
+
+          # Version bump markers, highest precedence first:
+          # - major: #major, semver: major, BREAKING CHANGE, or conventional commits with !
+          # - minor: #minor, semver: minor, or conventional commits starting with feat:
+          # - patch: #patch, semver: patch, or anything else
+          if ($commitText -match '(?im)#major\b|semver:\s*major\b|BREAKING CHANGE\b|^[^\r\n]*!:' ) {
+            $bump = "major"
+          } elseif ($commitText -match '(?im)#minor\b|semver:\s*minor\b|^feat(\([^)]+\))?:' ) {
+            $bump = "minor"
+          } elseif ($commitText -match '(?im)#patch\b|semver:\s*patch\b' ) {
+            $bump = "patch"
+          }
 
           if (-not $latestTag) {
             $nextVersion = "1.0.0"
@@ -37,12 +52,30 @@ jobs:
 
             $major = [int]$Matches[1]
             $minor = [int]$Matches[2]
-            $patch = [int]$Matches[3] + 1
+            $patch = [int]$Matches[3]
+
+            switch ($bump) {
+              "major" {
+                $major += 1
+                $minor = 0
+                $patch = 0
+              }
+              "minor" {
+                $minor += 1
+                $patch = 0
+              }
+              default {
+                $patch += 1
+              }
+            }
+
             $nextVersion = "$major.$minor.$patch"
           }
 
           "version=$nextVersion" >> $env:GITHUB_OUTPUT
           "tag=v$nextVersion" >> $env:GITHUB_OUTPUT
+          "previous_tag=$latestTag" >> $env:GITHUB_OUTPUT
+          "bump=$bump" >> $env:GITHUB_OUTPUT
 
       - name: Install Inno Setup
         shell: pwsh
@@ -59,7 +92,7 @@ jobs:
           & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "installer\LivelySlideshow.iss"
 
       - name: Prepare release asset
-        id: asset
+        id: assets
         shell: pwsh
         run: |
           $source = "dist\LivelySlideshowSetup.exe"
@@ -69,12 +102,59 @@ jobs:
 
           $destination = "dist\LivelySlideshowSetup-v${{ steps.version.outputs.version }}.exe"
           Move-Item -LiteralPath $source -Destination $destination -Force
-          "path=$destination" >> $env:GITHUB_OUTPUT
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $destination).Hash.ToLowerInvariant()
+          $checksumPath = "dist\SHA256SUMS.txt"
+          "$hash *$(Split-Path -Leaf $destination)" | Out-File -FilePath $checksumPath -Encoding utf8
+
+          "installer_path=$destination" >> $env:GITHUB_OUTPUT
+          "installer_name=$(Split-Path -Leaf $destination)" >> $env:GITHUB_OUTPUT
+          "checksum_path=$checksumPath" >> $env:GITHUB_OUTPUT
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+
+      - name: Build release notes
+        id: notes
+        shell: pwsh
+        run: |
+          $bodyPath = "dist\release-notes.md"
+          $previousTag = "${{ steps.version.outputs.previous_tag }}"
+          $range = if ([string]::IsNullOrWhiteSpace($previousTag)) { "HEAD" } else { "$previousTag..HEAD" }
+          $commitSubjects = @(git log $range --pretty=format:"%s")
+
+          if ($commitSubjects.Count -eq 0) {
+            $commitSubjects = @("Maintenance release.")
+          }
+
+          $summary = foreach ($subject in $commitSubjects) {
+            "- $subject"
+          }
+
+          $body = @(
+            "## Download"
+            ""
+            "- Installer: `${{ steps.assets.outputs.installer_name }}`"
+            "- SHA-256: `${{ steps.assets.outputs.sha256 }}`"
+            "- Checksums: `SHA256SUMS.txt`"
+            ""
+            "## What's changed"
+            ""
+          ) + $summary + @(
+            ""
+            "## Notes"
+            ""
+            "- Version bump: `${{ steps.version.outputs.bump }}`"
+            "- Lively Wallpaper is required: https://github.com/rocksdanister/lively"
+            "- This release is built automatically from the `main` branch."
+          )
+
+          $body | Out-File -FilePath $bodyPath -Encoding utf8
+          "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: LivelySlideshow v${{ steps.version.outputs.version }}
-          files: ${{ steps.asset.outputs.path }}
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.body_path }}
+          files: |
+            ${{ steps.assets.outputs.installer_path }}
+            ${{ steps.assets.outputs.checksum_path }}

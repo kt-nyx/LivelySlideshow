@@ -2,8 +2,10 @@
 #ifndef MyAppVersion
   #define MyAppVersion "1.0.0"
 #endif
-#define MyAppPublisher "LivelySlideshow contributors"
-#define MyAppURL "https://github.com/rocksdanister/lively"
+#define MyAppPublisher "kt-nyx"
+#define MyAppURL "https://github.com/kt-nyx/LivelySlideshow"
+#define MyAppUpdatesURL "https://github.com/kt-nyx/LivelySlideshow/releases/latest"
+#define MyAppSupportURL "https://github.com/kt-nyx/LivelySlideshow/issues"
 #define LivelyCUVersion "v2.0.4.0"
 #define LivelyCUUrl "https://github.com/rocksdanister/lively/releases/download/v2.0.4.0/lively_command_utility.zip"
 
@@ -13,8 +15,8 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
+AppSupportURL={#MyAppSupportURL}
+AppUpdatesURL={#MyAppUpdatesURL}
 DefaultDirName={localappdata}\LivelySlideshow
 DisableDirPage=yes
 DisableProgramGroupPage=yes
