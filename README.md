@@ -1,19 +1,17 @@
 # LivelySlideshow
 
-LivelySlideshow is a simple Windows tray app that rotates wallpapers from a folder on a schedule by sending each file to Lively Wallpaper. It supports regular images plus animated formats that Lively can import, including GIFs and WebP files.
-
-## Download
-
-- Download the latest installer from the [GitHub Releases page](https://github.com/kt-nyx/LivelySlideshow/releases/latest).
-- Install [Lively Wallpaper](https://github.com/rocksdanister/lively).
-- Run `LivelySlideshowSetup.exe`.
+LivelySlideshow is a simple Windows tray app that allows you to have "slideshow" functionality with [Lively Wallpaper](https://github.com/rocksdanister/lively). This allows you to rotate both "live" and normal wallpapers from a folder on a schedule, just like the Windows "slideshow" wallpaper setting. It supports both regular images and any animated formats that Lively can import, including GIFs and WebP files.
 
 ## Requirements
 
 - Windows 10 or Windows 11
-- [Lively Wallpaper](https://github.com/rocksdanister/lively) installed by the user
+- [Lively Wallpaper](https://github.com/rocksdanister/lively)
 
 LivelySlideshow depends on Lively Wallpaper to display wallpapers. If Lively is not installed, the app will show a message telling you where to get it.
+
+## Download
+
+- Download the latest installer from the [GitHub Releases page](https://github.com/kt-nyx/LivelySlideshow/releases/latest).
 
 ## Install
 
@@ -21,19 +19,19 @@ LivelySlideshow depends on Lively Wallpaper to display wallpapers. If Lively is 
 2. Download `LivelySlideshowSetup.exe` from the [latest release](https://github.com/kt-nyx/LivelySlideshow/releases/latest).
 3. Run the installer.
 4. The installer places the app in `%LOCALAPPDATA%\LivelySlideshow`.
-5. LivelySlideshow starts automatically and appears in the system tray.
+5. LivelySlideshow will now start automatically and appear in the system tray.
 
-The installer also registers a per-user Task Scheduler entry so the tray app launches silently when you sign in.
+The installer also registers a per-user Task Scheduler entry so the tray app launches silently when you start Windows.
 
 ## Configure
 
 Right-click the tray icon to manage the app:
 
-- `Next wallpaper` changes immediately.
+- `Next wallpaper` changes to the next wallpaper immediately.
 - `Shuffle now` reshuffles the current playlist and changes immediately.
 - `Interval` sets how often wallpapers rotate.
 - `Folder` lets you choose the wallpaper folder.
-- `Include subfolders` expands the scan into nested folders.
+- `Include subfolders` expands the scan into nested folders (e.g. if you have the folder "Wallpapers" with the folder "Landscapes" inside, the app will also scan through "Landscapes" for wallpapers).
 
 Left-clicking the tray icon also changes to the next wallpaper.
 
@@ -53,7 +51,7 @@ The bundled Lively command utility is stored here:
 
 - If you see a message about `livelycu.exe` being missing, reinstall LivelySlideshow.
 - If you see a message saying Lively Wallpaper is required, install it from [the Lively project page](https://github.com/rocksdanister/lively), then start Lively Wallpaper once.
-- If wallpapers are not changing, check the log file in `%LOCALAPPDATA%\LivelySlideshow\data\logs`.
+- If wallpapers are not changing, check the log file in `%LOCALAPPDATA%\LivelySlideshow\data\logs` for more information.
 - If a folder does not work, make sure it contains supported files such as `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, or `.webp`.
 - If the tray icon is not present after sign-in, open Task Scheduler and verify the `LivelySlideshow` task exists for your user account.
 
@@ -67,8 +65,8 @@ Third-party components (below) are not covered by MIT-0. The full text of GPLv3 
 
 ### Lively Wallpaper (`livelycu.exe`)
 
-LivelySlideshow talks to the user’s installation of [Lively Wallpaper](https://github.com/rocksdanister/lively). The installer downloads `livelycu.exe` (the Lively command utility) from Lively’s release artifacts. That executable is licensed under **GPL-3.0-only**; the full text is in `LICENSES/GPL-3.0.txt`. Corresponding source for Lively, including the command utility, is available from the [Lively repository](https://github.com/rocksdanister/lively).
+LivelySlideshow talks to the user’s installation of [Lively Wallpaper](https://github.com/rocksdanister/lively). The installer downloads `livelycu.exe` (the Lively command utility) from Lively’s release artifacts. That executable is licensed under **GPL-3.0**; the full text is in `LICENSES/GPL-3.0.txt`. Corresponding source for Lively, including the command utility, is available from the [Lively repository](https://github.com/rocksdanister/lively).
 
 ### Tray icon (`tray.ico`)
 
-The system tray icon is derived from Flaticon’s “art” icon set. [Art icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/art)
+The system tray icon is from Flaticon’s icon set. [Art icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/art)
