@@ -66,7 +66,7 @@ function Start-LivelySlideshowTrayApp {
             [bool]$Recursive
         )
 
-        return (Get-LivelyWallpaperFiles -Folder $Folder -Recursive $Recursive).Count -gt 0
+        return (@(Get-LivelyWallpaperFiles -Folder $Folder -Recursive $Recursive)).Count -gt 0
     }
 
     function Show-DependencyWarning {
@@ -93,7 +93,7 @@ function Start-LivelySlideshowTrayApp {
         $snapshot = Get-CurrentConfigState
         $config = $snapshot.Config
         $state = $snapshot.State
-        $fileCount = (Get-LivelyWallpaperFiles -Folder $config.WallFolder -Recursive $config.Recursive).Count
+        $fileCount = (@(Get-LivelyWallpaperFiles -Folder $config.WallFolder -Recursive $config.Recursive)).Count
 
         $folderName = if ([string]::IsNullOrWhiteSpace($config.WallFolder)) { 'Not set' } else { Split-Path -Leaf $config.WallFolder }
         if ([string]::IsNullOrWhiteSpace($folderName)) {
